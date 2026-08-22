@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>GRMS MATHCOUNTS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,500&family=Work+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#121b14;
+    --board:#1b2a1f;
+    --board-2:#20301f;
+    --chalk:#f3efe3;
+    --chalk-dim:#9fb0a0;
+    --gold:#f2b84b;
+    --coral:#e8735c;
+    --rule: rgba(243,239,227,0.14);
+    --rule-soft: rgba(243,239,227,0.07);
+  }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body{ margin:0; padding:0; }
+  html{ -webkit-text-size-adjust:100%; }
+  body{
+    background:
+      radial-gradient(ellipse at 20% -10%, rgba(242,184,75,0.07), transparent 45%),
+      radial-gradient(ellipse at 90% 10%, rgba(232,115,92,0.06), transparent 40%),
+      var(--ink);
+    color:var(--chalk);
+    font-family:'Work Sans', sans-serif;
+    min-height:100vh;
+    position:relative;
+    overflow-x:hidden;
+  }
+  ::selection{ background:var(--gold); color:var(--ink); }
+  a{ color:inherit; }
+  h1,h2,h3{ font-family:'Fraunces', serif; font-weight:600; margin:0; }
+  .em{ font-style:italic; font-weight:500; color:var(--gold); }
+  .mono{ font-family:'JetBrains Mono', monospace; }
+
+  button, input, select{ font-family:inherit; }
+  button{ touch-action:manipulation; }
+  :focus-visible{ outline:2px solid var(--gold); outline-offset:3px; border-radius:4px; }
+
+  /* ambient chalk dust layer */
+  #dust{ position:fixed; inset:0; pointer-events:none; z-index:0; overflow:hidden; }
+  .mote{
+    position:absolute; top:-10px; width:3px; height:3px; border-radius:50%;
+    background:var(--chalk); opacity:0.35;
+    animation: fall linear forwards;
+  }
+  @keyframes fall{
+    to{ transform:translateY(110vh) translateX(var(--drift,0px)); opacity:0; }
+  }
+
+  /* topbar */
+  .topbar{
+    position:sticky; top:0; z-index:20;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:22px 6vw;
+    background:rgba(18,27,20,0.86);
+    backdrop-filter:blur(8px);
+    border-bottom:1px solid var(--rule);
+    gap:12px;
+  }
+  .brand{ font-family:'Fraunces', serif; font-size:1.3rem; font-weight:600; letter-spacing:0.01em; display:flex; align-items:center; gap:6px; white-space:nowrap; }
+  .brand-mark{ color:var(--gold); font-size:1.1rem; display:inline-block; transform:translateY(-1px); }
+
+  .tabs{ display:flex; gap:6px; }
+  .tab{
+    background:none; border:1px solid transparent; color:var(--chalk-dim);
+    font-size:0.92rem; padding:10px 16px; border-radius:999px; cursor:pointer;
+    transition:color .2s ease, border-color .2s ease, background .2s ease;
+    min-height:44px;
+  }
+  .tab:hover{ color:var(--chalk); }
+  .tab.active{ color:var(--ink); background:var(--gold); font-weight:600; }
+
+  /* hamburger, hidden on desktop */
+  .menu-btn{
+    display:none; align-items:center; justify-content:center;
+    width:44px; height:44px; border-radius:10px;
+    background:transparent; border:1px solid var(--rule); color:var(--chalk);
+    cursor:pointer; flex:none;
+  }
+  .menu-btn .bars{ position:relative; width:18px; height:12px; }
+  .menu-btn .bars span{
+    position:absolute; left:0; right:0; height:2px; background:var(--chalk);
+    transition:transform .25s ease, opacity .2s ease, top .25s ease;
+  }
+  .menu-btn .bars span:nth-child(1){ top:0; }
+  .menu-btn .bars span:nth-child(2){ top:5px; }
+  .menu-btn .bars span:nth-child(3){ top:10px; }
+  .menu-btn.open .bars span:nth-child(1){ top:5px; transform:rotate(45deg); }
+  .menu-btn.open .bars span:nth-child(2){ opacity:0; }
+  .menu-btn.open .bars span:nth-child(3){ top:5px; transform:rotate(-45deg); }
+
+  main{ position:relative; z-index:1; max-width:980px; margin:0 auto; padding:0 6vw 100px; }
+  .page{ display:none; animation:rise .5s ease both; }
+  .page.active{ display:block; }
+  @keyframes rise{ from{ opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);} }
+
+  /* swipeable page track (touch swipe support) */
+  .page-viewport{ overflow:hidden; touch-action:pan-y; }
+
+  /* ---------- HOME ---------- */
+  .hero{ padding:64px 0 20px; display:grid; grid-template-columns:1.1fr 0.9fr; gap:40px; align-items:center; }
+  .eyebrow{ font-family:'JetBrains Mono', monospace; font-size:0.78rem; letter-spacing:0.14em; text-transform:uppercase; color:var(--gold); margin-bottom:14px; display:block; }
+  .hero h1{ font-size:clamp(2.2rem, 4.6vw, 3.4rem); line-height:1.08; }
+  .hero p.lede{ color:var(--chalk-dim); font-size:1.08rem; line-height:1.6; margin-top:18px; max-width:46ch; }
+  .cta-row{ display:flex; gap:12px; margin-top:30px; flex-wrap:wrap; }
+  .btn{
+    font-family:'Work Sans', sans-serif; font-weight:600; font-size:0.95rem;
+    padding:14px 22px; border-radius:8px; cursor:pointer; border:1px solid var(--rule);
+    transition:transform .15s ease, background .2s ease, border-color .2s ease;
+    text-decoration:none; display:inline-flex; align-items:center; justify-content:center;
+    min-height:44px; touch-action:manipulation;
+  }
+  .btn:active{ transform:scale(0.97); }
+  .btn:hover{ transform:translateY(-1px); }
+  .btn-primary{ background:var(--gold); color:var(--ink); border-color:var(--gold); }
+  .btn-primary:hover{ background:#f7c968; }
+  .btn-ghost{ background:transparent; color:var(--chalk); }
+  .btn-ghost:hover{ border-color:var(--chalk-dim); }
+
+  .compass-wrap{ display:flex; justify-content:center; }
+  #compass{ width:100%; max-width:320px; height:auto; }
+  .draw{ stroke-dasharray:1000; stroke-dashoffset:1000; animation:draw 2.2s ease forwards; }
+  .draw-slow{ stroke-dasharray:1000; stroke-dashoffset:1000; animation:draw 2.8s .3s ease forwards; }
+  .draw-dot{ opacity:0; animation:pop .4s ease forwards; }
+  @keyframes draw{ to{ stroke-dashoffset:0; } }
+  @keyframes pop{ to{ opacity:1; } }
+  #compassArm{ transform-origin:160px 160px; animation:swing 2.4s ease-in-out forwards; }
+  @keyframes swing{ from{ transform:rotate(-18deg);} to{ transform:rotate(342deg);} }
+
+  .about-strip{ margin-top:64px; padding-top:36px; border-top:1px solid var(--rule); display:grid; grid-template-columns:repeat(3,1fr); gap:28px; }
+  .about-strip .col .idx{ font-family:'JetBrains Mono', monospace; color:var(--gold); font-size:0.8rem; }
+  .about-strip .col h3{ font-size:1.1rem; margin-top:8px; }
+  .about-strip .col p{ color:var(--chalk-dim); font-size:0.92rem; line-height:1.55; margin-top:8px; }
+
+  /* ---------- SHARED PAGE HEAD ---------- */
+  .page-head{ padding:56px 0 8px; }
+  .page-head .eyebrow{ margin-bottom:10px; }
+  .page-head h2{ font-size:2rem; }
+  .page-head p{ color:var(--chalk-dim); margin-top:10px; max-width:60ch; line-height:1.6; }
+
+  /* ---------- PRACTICE PROBLEMS ---------- */
+  .embed-grid{ display:grid; grid-template-columns:1fr 1fr; gap:24px; margin-top:32px; }
+  .embed-card{ background:var(--board); border:1px solid var(--rule); border-radius:14px; overflow:hidden; }
+  .embed-card .embed-label{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:14px 18px; border-bottom:1px solid var(--rule);
+  }
+  .embed-card .embed-label h3{ font-size:1rem; font-family:'Work Sans'; font-weight:600; }
+  .embed-card .embed-label span{ font-family:'JetBrains Mono', monospace; font-size:0.75rem; color:var(--chalk-dim); }
+  .embed-card iframe{ width:100%; height:480px; border:none; display:block; background:var(--ink); }
+  .embed-note{ color:var(--chalk-dim); font-size:0.82rem; margin-top:22px; line-height:1.6; }
+  .embed-note code{ background:var(--board-2); padding:2px 6px; border-radius:4px; font-size:0.8rem; }
+
+  /* ---------- ABOUT ---------- */
+  .prose{ margin-top:30px; max-width:66ch; }
+  .prose p{ color:var(--chalk-dim); font-size:1rem; line-height:1.75; margin:0 0 20px; }
+  .prose p:first-of-type{ color:var(--chalk); }
+  .prose h3{ font-size:1.15rem; margin:36px 0 12px; color:var(--chalk); }
+
+  footer{ position:relative; z-index:1; border-top:1px solid var(--rule); padding:26px 6vw; color:#5c6a5f; font-size:0.8rem; display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px; }
+
+  /* swipe hint dots, mobile only */
+  .swipe-dots{ display:none; justify-content:center; gap:8px; margin:18px 0 4px; }
+  .swipe-dots .dot{ width:6px; height:6px; border-radius:50%; background:var(--rule); transition:background .2s ease, transform .2s ease; }
+  .swipe-dots .dot.active{ background:var(--gold); transform:scale(1.3); }
+
+  /* ================= MOBILE / TOUCH ================= */
+  @media (max-width: 760px){
+    .topbar{ padding:16px 5vw; }
+    .brand{ font-size:1.1rem; }
+
+    /* collapse tabs into a slide-down sheet triggered by hamburger */
+    .menu-btn{ display:flex; }
+    .tabs{
+      position:fixed; top:0; right:0; height:100vh; width:min(78vw, 300px);
+      flex-direction:column; align-items:stretch; gap:4px;
+      background:rgba(18,27,20,0.98); backdrop-filter:blur(10px);
+      border-left:1px solid var(--rule);
+      padding:88px 20px 24px;
+      transform:translateX(100%);
+      transition:transform .3s ease;
+      z-index:19;
+    }
+    .tabs.open{ transform:translateX(0); }
+    .tab{ text-align:left; border-radius:10px; font-size:1rem; padding:14px 16px; }
+
+    .nav-scrim{
+      display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4);
+      z-index:18;
+    }
+    .nav-scrim.open{ display:block; }
+
+    main{ padding:0 5vw 90px; }
+
+    .hero{ grid-template-columns:1fr; padding:36px 0 8px; gap:28px; }
+    .hero h1{ font-size:2rem; }
+    .hero p.lede{ font-size:1rem; max-width:none; }
+    .compass-wrap{ order:-1; }
+    #compass{ max-width:220px; }
+    .cta-row{ flex-direction:column; align-items:stretch; }
+    .cta-row .btn{ width:100%; }
+
+    .about-strip{ grid-template-columns:1fr; gap:26px; margin-top:44px; padding-top:28px; }
+
+    .page-head{ padding:36px 0 4px; }
+    .page-head h2{ font-size:1.5rem; }
+
+    /* practice: swipeable single-column carousel of cards */
+    .page-viewport-practice .embed-grid{
+      display:flex; flex-wrap:nowrap; overflow-x:auto; scroll-snap-type:x mandatory;
+      gap:16px; margin-top:24px; -webkit-overflow-scrolling:touch;
+      scrollbar-width:none;
+    }
+    .page-viewport-practice .embed-grid::-webkit-scrollbar{ display:none; }
+    .embed-grid .embed-card{
+      flex:0 0 100%; scroll-snap-align:center;
+    }
+    .embed-card iframe{ height:60vh; min-height:340px; touch-action:pan-y pan-x pinch-zoom; }
+    .swipe-dots{ display:flex; }
+
+    .prose{ margin-top:20px; }
+    .prose h3{ margin:28px 0 10px; }
+
+    footer{ padding:20px 5vw; font-size:0.75rem; flex-direction:column; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration:0.001s !important; animation-iteration-count:1 !important; transition-duration:0.001s !important; }
+    #dust{ display:none; }
+  }
+</style>
+</head>
+<body>
+
+<div id="dust"></div>
+
+<header class="topbar">
+  <div class="brand"><span class="brand-mark">📐</span>GRMS MATHCOUNTS</div>
+  <button class="menu-btn" id="menuBtn" aria-label="Toggle navigation menu" aria-expanded="false">
+    <span class="bars"><span></span><span></span><span></span></span>
+  </button>
+  <div class="nav-scrim" id="navScrim"></div>
+  <nav class="tabs" id="tabs">
+    <button class="tab active" data-page="home">Home</button>
+    <button class="tab" data-page="practice">Practice</button>
+    <button class="tab" data-page="about">About</button>
+  </nav>
+</header>
+
+<main>
+
+  <div class="page-viewport" id="pageViewport">
+
+  <!-- HOME -->
+  <section class="page active" id="page-home">
+    <div class="hero">
+      <div>
+        <span class="eyebrow">Welcome to</span>
+        <h1>Math Counts<br><span class="em">of Gale Ranch Middle School.</span></h1>
+        <p class="lede">The GRMS MATHCOUNTS Program is a student-led math team designed to prepare students for the MATHCOUNTS Middle School Math Competition and is led by high schoolers in the Tri-Valley. The program is highly selective and meets every week.</p>
+        <div class="cta-row">
+          <!-- Replace this href with your real registration form link -->
+          <a class="btn btn-primary" href="https://forms.gle/your-form-here" target="_blank" rel="noopener">Register</a>
+          <button class="btn btn-ghost" data-goto="practice">View practice problems</button>
+        </div>
+      </div>
+      <div class="compass-wrap">
+        <svg id="compass" viewBox="0 0 320 320" fill="none">
+          <circle class="draw" cx="160" cy="160" r="110" stroke="#f3efe3" stroke-width="1.4" opacity="0.85"/>
+          <circle class="draw-slow" cx="160" cy="160" r="72" stroke="#f2b84b" stroke-width="1.2" opacity="0.7"/>
+          <g id="compassArm">
+            <line x1="160" y1="160" x2="160" y2="50" stroke="#e8735c" stroke-width="2" stroke-linecap="round"/>
+            <circle cx="160" cy="50" r="4" fill="#e8735c"/>
+          </g>
+          <circle cx="160" cy="160" r="3" fill="#f3efe3"/>
+          <circle class="draw-dot" style="animation-delay:2.2s" cx="160" cy="50" r="3.5" fill="#f2b84b"/>
+          <circle class="draw-dot" style="animation-delay:2.4s" cx="253" cy="205" r="3.5" fill="#f2b84b"/>
+          <circle class="draw-dot" style="animation-delay:2.6s" cx="67" cy="205" r="3.5" fill="#f2b84b"/>
+          <path class="draw-dot" style="animation-delay:2.3s" d="M160 50 L253 205 L67 205 Z" stroke="#9fb0a0" stroke-width="1" opacity="0.5"/>
+        </svg>
+      </div>
+    </div>
+
+    <div class="about-strip">
+      <div class="col"><span class="idx mono">Program Details</span><h3>About the Program</h3><p>The GRMS MathCounts Program is a student-led team that participates at the MATHCOUNTS Diablo Chapter Competition, representing GRMS, every February. Our team has consistently beat other teams in recent years and have qualified for MATHCOUNTS State for the last two years.</p></div>
+      <div class="col"><span class="idx mono">Admissions</span><h3>Selection Process</h3><p>Our intensive selection test contains 30 short answer questions to be solved in 40 minutes. The top 15 students in the test directly qualify to our program, where they prepare weekly for the competition in February.</p></div>
+      <div class="col"><span class="idx mono">Notes</span><h3>Partnered Organizations</h3><p>We partner with the MATHCOUNTS Middle School Competition Math Program (mathcounts.com), and operate out of Gale Ranch Middle School, located in San Ramon, California.</p></div>
+    </div>
+  </section>
+
+  <!-- PRACTICE PROBLEMS -->
+  <section class="page page-viewport-practice" id="page-practice">
+    <div class="page-head">
+      <span class="eyebrow">Practice</span>
+      <h2>Past Selection Tests</h2>
+      <p>The problem set on the left is the test administered in 2025. This practice test is most similar to the selection test that we will administrate in our next season. Want to have extra practice? Use the test in the right, which is a sample test curated by our coaches. We also posted older selection tests, which may not be as acccurate as the 2025 version.</p>
+    </div>
+
+    <div class="embed-grid" id="embedGrid">
+      <div class="embed-card">
+        <div class="embed-label"><h3>2025 Selection Test</h3></div>
+        <!-- Replace FILE_ID_1 with your Google Drive file ID.
+             Get it from the file's share link: drive.google.com/file/d/FILE_ID/view -->
+        <iframe src="https://drive.google.com/file/d/1Nb4NvSYArx6bjmf9nDdxbQItsiAd03QU/preview" allow="autoplay" loading="lazy"></iframe>
+      </div>
+      <div class="embed-card">
+        <div class="embed-label"><h3>Mock Selection Test</h3></div>
+        <!-- Replace FILE_ID_2 with your Google Drive file ID -->
+        <iframe src="https://drive.google.com/file/d/1mDtgL8XI_qdokhfpZ_mJKC8pnBPiQyFI/preview" allow="autoplay" loading="lazy"></iframe>
+      </div>
+      <div class="embed-card">
+        <div class="embed-label"><h3>2024 Selection Test (Old)</h3></div>
+        <!-- Replace FILE_ID_3 with your Google Drive file ID -->
+        <iframe src="https://drive.google.com/file/d/1lt53gv69p1_QrudQDi7HT2UOA4BRTETX/preview" allow="autoplay" loading="lazy"></iframe>
+      </div>
+      <div class="embed-card">
+        <div class="embed-label"><h3>2023 Selection Test (Old)</h3></div>
+        <!-- Replace FILE_ID_4 with your Google Drive file ID -->
+        <iframe src="https://drive.google.com/file/d/FILE_ID_4/preview" allow="autoplay" loading="lazy"></iframe>
+      </div>
+    </div>
+
+    <div class="swipe-dots" id="swipeDots">
+      <span class="dot active"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+    </div>
+
+    <p class="embed-note">
+      Open a set in full screen using the expand icon inside each embed. On a touchscreen, swipe left or right across the tests above to move between them. Fill out the form at the end of the documents to receive a score report and answer key. If you have any questions, please reach out to [tbd].
+    </p>
+  </section>
+
+  <!-- ABOUT -->
+  <section class="page" id="page-about">
+    <div class="page-head">
+      <span class="eyebrow">Who are we?</span>
+      <h2>About GR Math Counts</h2>
+    </div>
+
+    <div class="prose">
+      <p>Gale Ranch Middle School Math Counts aims to provide interested math-oriented students with powerful guidance and competition experience. Our dedicated coaches make sure that a strong group of math students can use their skills in high-stakes, competitive situations.</p>
+
+      <h3>Selection Test and Program Information</h3>
+      <p>The selection test will be held on [TBD] at [TBD], in the MPR at Gale Ranch Middle School, from 3:00 pm to 3:45 pm. Approximately a week after the selection test, students will be notified via email if they are accepted into the program or not. If the student is accepted into the program, they must attend weekly team meetings which occur from 3:15-4:45 on Tuesdays (tentative). Please check if your student can make most of the meetings for most of the time per week before registering.</p>
+
+      <h3>Who it's for</h3>
+      <p>Anyone who is in middle school and attends Gale Ranch Middle School is welcome to try our selection test and register. However, we are looking for strong math individuals, so eighth graders will naturally fall more into our scope. This doesn't mean that higher grades get priority; if you score well as a sixth grader, you have an equally good chance of making the team.</p>
+
+      <h3>Coaches</h3>
+      <p>The Gale Ranch Middle School MATHCOUNTS Program is brought to you by Sharanya Roy and Daniel Liao, the head coaches. They are both seniors in high school and have extensive competition math experience. Furthermore, State qualifiers such as Aneeka Rao and Paarth Bansal also provide valuable advice and coaching to students as well.</p>
+
+      <h3>Preparation</h3>
+      <p>We strongly advise that students solve the practice problems given on the website as practice for the real selection test. In addition, MATHCOUNTS is similar to the AMC 8 and AMC 10 in difficulty. The competition consists of 30 short answer questions to be solved in 40 minutes. The questions slowly increase in difficulty, and the test is similar to State and Chapter MATHCOUNTS Sprints from recent years.</p>
+
+      <h3>Other math organizations</h3>
+      <p>Looking to prepare for math competitions such as MATHCOUNTS, AMC 8/10 or even novice math competions such as Math Olympiads? Matrix Math Club (matrixmathclub.square.site) also offers competition math lessons and is taught by some of our coaches, and provide a base introduction for beginners hoping to qualify for the MATHCOUNTS Program.</p>
+
+      <p>If you are looking for general tutoring for elementary to high school school subjects, please register for Tri-Valley Tutoring. Tri Valley Tutoring (trivalleytutoring.org) is one of the largest student-led tutoring programs in the Bay Area. Specifically, for mathematics, they offer programs as early as elementary school math and as late as AP Calculus BC. They also have a multitude of free resources that are extremely valuable for competition math. Again, our coaches are also tutoring through this program as well.</p>
+
+      <p>Register for our tutoring programs today for more preparation for the selection test!</p>
+
+    </div>
+  </section>
+
+  </div><!-- /page-viewport -->
+
+</main>
+
+<footer>
+  <span>Copyright © GRMS MATHCOUNTS 2026-2027</span>
+  <span class="mono">All problems and solutions are copyrighted by GRMS MATHCOUNTS.</span>
+</footer>
+
+<script>
+(function(){
+  "use strict";
+
+  var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // ---------- navigation (click + touch both fire the same handlers) ----------
+  var tabs = document.querySelectorAll(".tab");
+  var pages = document.querySelectorAll(".page");
+  var tabsNav = document.getElementById("tabs");
+  var menuBtn = document.getElementById("menuBtn");
+  var navScrim = document.getElementById("navScrim");
+
+  function goto(name){
+    tabs.forEach(function(t){ t.classList.toggle("active", t.dataset.page === name); });
+    pages.forEach(function(p){ p.classList.toggle("active", p.id === "page-" + name); });
+    closeMenu();
+  }
+  tabs.forEach(function(t){ t.addEventListener("click", function(){ goto(t.dataset.page); }); });
+  document.querySelectorAll("[data-goto]").forEach(function(b){
+    b.addEventListener("click", function(){ goto(b.dataset.goto); });
+  });
+
+  // ---------- mobile hamburger menu (tap to open/close) ----------
+  function openMenu(){
+    tabsNav.classList.add("open");
+    menuBtn.classList.add("open");
+    navScrim.classList.add("open");
+    menuBtn.setAttribute("aria-expanded", "true");
+  }
+  function closeMenu(){
+    tabsNav.classList.remove("open");
+    menuBtn.classList.remove("open");
+    navScrim.classList.remove("open");
+    menuBtn.setAttribute("aria-expanded", "false");
+  }
+  menuBtn.addEventListener("click", function(){
+    if(tabsNav.classList.contains("open")){ closeMenu(); } else { openMenu(); }
+  });
+  navScrim.addEventListener("click", closeMenu);
+
+  // close the mobile menu automatically if the viewport grows back to desktop size
+  window.addEventListener("resize", function(){
+    if(window.innerWidth > 760){ closeMenu(); }
+  });
+
+  // ---------- touch swipe between practice-test embed cards ----------
+  var embedGrid = document.getElementById("embedGrid");
+  var dots = document.querySelectorAll("#swipeDots .dot");
+  if(embedGrid){
+    var setActiveDot = function(){
+      var cardWidth = embedGrid.clientWidth;
+      if(cardWidth === 0) return;
+      var idx = Math.round(embedGrid.scrollLeft / cardWidth);
+      dots.forEach(function(d, i){ d.classList.toggle("active", i === idx); });
+    };
+    embedGrid.addEventListener("scroll", function(){
+      window.requestAnimationFrame(setActiveDot);
+    }, { passive: true });
+
+    // let the dots also act as tap-to-jump controls on touch devices
+    dots.forEach(function(dot, i){
+      dot.addEventListener("click", function(){
+        var card = embedGrid.children[i];
+        if(card){ embedGrid.scrollTo({ left: card.offsetLeft, behavior: "smooth" }); }
+      });
+    });
+  }
+
+  // ---------- ambient dust ----------
+  function spawnMote(){
+    if(reduceMotion) return;
+    var dustHost = document.getElementById("dust");
+    var m = document.createElement("div");
+    m.className = "mote";
+    var startX = Math.random() * window.innerWidth;
+    var drift = (Math.random() - 0.5) * 80;
+    var dur = 9 + Math.random() * 8;
+    m.style.left = startX + "px";
+    m.style.setProperty("--drift", drift + "px");
+    m.style.animationDuration = dur + "s";
+    dustHost.appendChild(m);
+    setTimeout(function(){ m.remove(); }, dur * 1000);
+  }
+  if(!reduceMotion){
+    for(var i=0;i<6;i++) setTimeout(spawnMote, i*900);
+    setInterval(spawnMote, 1400);
+  }
+})();
+</script>
+</body>
+</html>
