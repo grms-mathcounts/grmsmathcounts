@@ -2,8 +2,8 @@
   "name": "GRMS MATHCOUNTS",
   "short_name": "MATHCOUNTS",
   "icons": [
-    { "src": "/favicon-192x192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "/favicon-512x512.png", "sizes": "512x512", "type": "image/png" }
+    { "src": "favicon-192x192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "favicon-512x512.png", "sizes": "512x512", "type": "image/png" }
   ],
   "theme_color": "#1b2a1f",
   "background_color": "#121b14",
